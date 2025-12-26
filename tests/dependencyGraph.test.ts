@@ -13,7 +13,7 @@ import type { DependencyGraph, PackageInfo } from '../src/types.js';
 function createMockGraph(structure: Record<string, string[]>): DependencyGraph {
     const packages = new Map<string, PackageInfo>();
     const edges = new Map<string, Set<string>>();
-    
+
     // Create packages
     for (const name of Object.keys(structure)) {
         packages.set(name, {
@@ -26,10 +26,10 @@ function createMockGraph(structure: Record<string, string[]>): DependencyGraph {
         });
         edges.set(name, new Set(structure[name]));
     }
-    
+
     // Build reverse edges
     const reverseEdges = buildReverseGraph(edges);
-    
+
     return { packages, edges, reverseEdges };
 }
 
@@ -42,7 +42,7 @@ const MockGraphPatterns = {
         }
         return createMockGraph(structure);
     },
-    
+
     linear: (count: number = 3): DependencyGraph => {
         const structure: Record<string, string[]> = {};
         structure['package-0'] = [];
@@ -51,7 +51,7 @@ const MockGraphPatterns = {
         }
         return createMockGraph(structure);
     },
-    
+
     diamond: (): DependencyGraph => {
         return createMockGraph({
             'package-a': [],
@@ -60,7 +60,7 @@ const MockGraphPatterns = {
             'package-d': ['package-b', 'package-c']
         });
     },
-    
+
     circular: (): DependencyGraph => {
         return createMockGraph({
             'package-a': ['package-b'],
@@ -68,7 +68,7 @@ const MockGraphPatterns = {
             'package-c': ['package-a']
         });
     },
-    
+
     complex: (): DependencyGraph => {
         return createMockGraph({
             'package-a': [],
