@@ -1,0 +1,10 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    ignore:
+      # Ignore local file dependencies - these are managed manually
+      - dependency-name: "@eldrforge/github-tools"
+      - dependency-name: "@eldrforge/git-tools"
