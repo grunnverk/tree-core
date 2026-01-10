@@ -1,6 +1,6 @@
 {
   "name": "@eldrforge/tree-core",
-  "version": "0.1.5-dev.0",
+  "version": "0.1.5",
   "description": "Dependency graph algorithms for monorepo package analysis",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
