@@ -33,8 +33,8 @@
   },
   "homepage": "https://github.com/grunnverk/tree-core#readme",
   "dependencies": {
-    "@grunnverk/git-tools": "^1.5.15",
-    "@grunnverk/shared": "^1.5.7"
+    "@grunnverk/git-tools": "^1.5.16",
+    "@grunnverk/shared": "^1.5.8"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
