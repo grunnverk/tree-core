@@ -1,6 +1,6 @@
 {
   "name": "@grunnverk/tree-core",
-  "version": "1.5.5-dev.0",
+  "version": "1.5.5",
   "description": "Dependency graph algorithms for monorepo package analysis",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
