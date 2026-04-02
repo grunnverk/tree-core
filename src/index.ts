@@ -6,6 +6,7 @@
 
 // Types
 export type { PackageInfo, DependencyGraph, SerializedGraph } from './types';
+export type { ScanOptions } from './dependencyGraph.js';
 
 // Package discovery
 export {

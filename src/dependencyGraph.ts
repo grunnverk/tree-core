@@ -74,13 +74,65 @@ export function shouldExclude(packageJsonPath: string, excludedPatterns: string[
 
 // Types are now imported from types.ts
 
+function getWorkspaceGlobs(pkgJson: Record<string, unknown>): string[] {
+    const w = pkgJson.workspaces;
+    if (Array.isArray(w)) return w as string[];
+    if (w && typeof w === 'object' && Array.isArray((w as { packages?: unknown }).packages)) {
+        return (w as { packages: string[] }).packages;
+    }
+    return [];
+}
+
 /**
- * Scan directory for package.json files
+ * Scan a workspace root's package directories and add any non-excluded
+ * package.json files to the results list.
+ */
+async function scanWorkspacePackages(
+    rootDir: string,
+    workspaceGlobs: string[],
+    excludedPatterns: string[],
+    results: string[]
+): Promise<void> {
+    const logger = getLogger();
+    for (const pattern of workspaceGlobs) {
+        const globPath = path.join(rootDir, pattern, 'package.json');
+        try {
+            for await (const absPath of fs.glob(globPath)) {
+                if (shouldExclude(absPath, excludedPatterns)) {
+                    logger.verbose(`Excluding workspace package.json at: ${absPath}`);
+                    continue;
+                }
+                results.push(absPath);
+                logger.verbose(`Found workspace package.json at: ${absPath}`);
+            }
+        } catch {
+            // glob pattern didn't match anything
+        }
+    }
+}
+
+export interface ScanOptions {
+    /**
+     * When true, npm workspace roots are expanded to include their workspace
+     * packages in the results. Use for `tree link` where cross-repo linking
+     * needs to see inside monorepos. Default false — most tree operations
+     * (precommit, publish, commit, pull) treat a monorepo as a single unit.
+     */
+    expandWorkspaces?: boolean;
+}
+
+/**
+ * Scan directory for package.json files.
+ * By default, treats npm workspace monorepos as single packages.
+ * Pass `{ expandWorkspaces: true }` to also include workspace sub-packages
+ * (useful for tree link where cross-repo linking needs the individual packages).
  */
 export async function scanForPackageJsonFiles(
     directory: string,
-    excludedPatterns: string[] = []
+    excludedPatterns: string[] = [],
+    options: ScanOptions = {}
 ): Promise<string[]> {
+    const expand = options.expandWorkspaces === true;
     const logger = getLogger();
     const packageJsonPaths: string[] = [];
 
@@ -94,6 +146,16 @@ export async function scanForPackageJsonFiles(
             if (!shouldExclude(directPackageJsonPath, excludedPatterns)) {
                 packageJsonPaths.push(directPackageJsonPath);
                 logger.verbose(`Found package.json at: ${directPackageJsonPath}`);
+
+                if (expand) {
+                    const raw = await fs.readFile(directPackageJsonPath, 'utf-8');
+                    const pkgJson = JSON.parse(raw) as Record<string, unknown>;
+                    const wsGlobs = getWorkspaceGlobs(pkgJson);
+                    if (wsGlobs.length > 0) {
+                        logger.verbose(`Workspace root detected at ${directory}, scanning workspace packages`);
+                        await scanWorkspacePackages(directory, wsGlobs, excludedPatterns, packageJsonPaths);
+                    }
+                }
             } else {
                 logger.verbose(`Excluding package.json at: ${directPackageJsonPath} (matches exclusion pattern)`);
             }
@@ -120,6 +182,16 @@ export async function scanForPackageJsonFiles(
 
                     packageJsonPaths.push(packageJsonPath);
                     logger.verbose(`Found package.json at: ${packageJsonPath}`);
+
+                    if (expand) {
+                        const raw = await fs.readFile(packageJsonPath, 'utf-8');
+                        const pkgJson = JSON.parse(raw) as Record<string, unknown>;
+                        const wsGlobs = getWorkspaceGlobs(pkgJson);
+                        if (wsGlobs.length > 0) {
+                            logger.verbose(`Workspace root detected at ${subDirPath}, scanning workspace packages`);
+                            await scanWorkspacePackages(subDirPath, wsGlobs, excludedPatterns, packageJsonPaths);
+                        }
+                    }
                 } catch {
                     // No package.json in this directory, continue
                 }
